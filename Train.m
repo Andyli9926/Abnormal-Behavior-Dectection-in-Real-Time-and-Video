@@ -49,7 +49,7 @@ dsVal = transform(dsVal, @(data)preprocessVideoClips(data, preprocessInfo));
 % A minimum learning rate of 1e-4.
 % A maximum learning rate of 1e-3.
 % Cosine number of iterations of 200, 300, and 400, after which the learning rate schedule cycle restarts. The option CosineNumIterations defines the width of each cosine cycle.
-Specify the parameters for SGDM optimization. Initialize the SGDM optimization parameters at the beginning of the training:
+% Specify the parameters for SGDM optimization. Initialize the SGDM optimization parameters at the beginning of the training:
 % A momentum of 0.9.
 % An initial velocity parameter initialized as [].
 % An L2 regularization factor of 0.0005.
