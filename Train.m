@@ -1,17 +1,5 @@
-Activity Recognition Using R(2+1)D Video Classification
-This example first shows how to perform activity recognition using a pretrained R(2+1)D [1] convolutional neural network based video classifier and then shows how to use transfer learning to train such a video classifier using video data.
-
-Overview
-Vision-based activity recognition involves predicting the action of an object, such as walking, swimming, or sitting, using a set of video frames. Activity recognition from video has many applications, such as human-computer interaction, robot learning, anomaly detection, surveillance, and object detection. For example, online prediction of multiple actions for incoming videos from multiple cameras can be important for robot learning. Compared to image classification, action recognition using videos is challenging to model because of the inaccurate ground truth data for video data sets, the variety of gestures that actors in a video can perform, the heavily class imbalanced datasets, and the large amount of data required to train a robust classifier from scratch. Deep learning techniques, such as R(2+1)D [1] and SlowFast [2] have shown improved performance on smaller datasets using transfer learning with networks pretrained on large video activity recognition datasets, such as Kinetics-400 [4].
-Note: This example requires the Computer Vision Toolbox™ Model for R(2+1)D Video Classification. You can install the Computer Vision Toolbox Model for R(2+1)D Video Classification from Add-On Explorer. For more information about installing add-ons, see Get and Manage Add-Ons.
-
-Train a Video Classifier for Gesture Recognition
-This section of the example shows how the video classifier shown above is trained using transfer learning. Set the doTraining variable to false to use the pretrained video classifier without having to wait for training to complete. Alternatively, if you want to train the video classifier, set the doTraining variable to true.
-doTraining = true;
-
-Download Training and Validation Data
-% classes = ["fall_floor","fight","hit","normal","run","walk"];
-dataFolder = fullfile("G:\FYP\Data_3");
+% Download Training and Validation Data
+dataFolder = fullfile("Data\Dataset");  # Load the dataset
 
 [labels,files] = folders2labels(fullfile(dataFolder,classes),...
     "IncludeSubfolders",true,...
@@ -22,9 +10,8 @@ indices = splitlabels(labels,0.8,'randomized');
 trainFilenames = files(indices{1});
 testFilenames  = files(indices{2});
 
-Load Dataset
-This example uses a datastore to read the videos sequences and the corresponding labels from the video files. 
-Specify the number of video frames the datastore should be configured to output for each time data is read from the datastore. 
+% Load Dataset
+
 numFrames = 12;
 frameSize = [112,112];
 numChannels = 3;
@@ -35,45 +22,37 @@ dsTrain = createFileDatastore(trainFilenames,numFrames,numChannels,classes,isDat
 isDataForTraining = false;
 dsVal = createFileDatastore(testFilenames,numFrames,numChannels,classes,isDataForTraining);
 
-Configure R(2+1)D Video Classifier for Transfer Learning
-In this example, you create a R(2+1)D video classifier based on the ResNet-3D architecture with 18 Spatio-Temporal residual layers, a 3D Convolution Neural Network Video Classifier pretrained on the Kinetics-400 dataset [4].
-Specify ResNet-3D with 18 Spatio-Temporal layers as the base network architecture for the R(2+1)D classifier.
+% Configure R(2+1)D Video Classifier for Transfer Learning
+% In this example, you create a R(2+1)D video classifier based on the ResNet-3D architecture with 18 Spatio-Temporal residual layers, a 3D Convolution Neural Network Video Classifier pretrained on the Kinetics-400 dataset [4].
+% Specify ResNet-3D with 18 Spatio-Temporal layers as the base network architecture for the R(2+1)D classifier.
 baseNetwork = "resnet-3d-18";
-Specify the input size for the R(2+1)D Video Classifier.
+% Specify the input size for the R(2+1)D Video Classifier.
 inputSize = [frameSize, numChannels, numFrames];
-Create a  R(2+1)D Video Classifier by specifying the classes for the HMDB51 dataset and the network input size.
+% Create a  R(2+1)D Video Classifier by specifying the classes for the HMDB51 dataset and the network input size.
 r2plus1d = r2plus1dVideoClassifier(baseNetwork,string(classes),"InputSize",inputSize);
-Specify a model name for the video classifier.
+% Specify a model name for the video classifier.
 r2plus1d.ModelName = "R(2+1)D Activity Recognizer";
 
-Augment and Preprocess Training Data
-Data augmentation provides a way to use limited data sets for training. Augmentation on video data must be the same for a collection of frames based on the network input size. Minor changes, such as translation, cropping, or transforming an image, provide, new, distinct, and unique images that you can use to train a robust video classifier. Datastores are a convenient way to read and augment collections of data. Augment the training video data by using the augmentVideo supporting function, defined at the end of this example. 
+% Augment and Preprocess Training Data
 dsTrain = transform(dsTrain, @augmentVideo);
-Preprocess the training video data to resize to the R(2+1)D Video Classifier input size, by using the preprocessVideoClips, defined at the end of this example. Specify the InputNormalizationStatistics property of the video classifier and input size to the preprocessing function as field values in a struct, preprocessInfo. The InputNormalizationStatistics property is used to rescale the video frames between 0 and 1, and then normalize the rescaled data using mean and standard deviation. The input size is used to resize the video frames using imresize based on the SizingOption value in the info struct. Alternatively, you could use "randomcrop" or "centercrop" to random crop or center crop the input data to the input size of the video classifier. Note that data augmentation is not applied to the test and validation data. Ideally, test and validation data should be representative of the original data and is left unmodified for unbiased evaluation.
 preprocessInfo.Statistics = r2plus1d.InputNormalizationStatistics;
 preprocessInfo.InputSize = inputSize;
 preprocessInfo.SizingOption = "resize";
 dsTrain = transform(dsTrain, @(data)preprocessVideoClips(data, preprocessInfo));
 dsVal = transform(dsVal, @(data)preprocessVideoClips(data, preprocessInfo));
 
-Define Model Loss Function
-The modelLoss function, listed at the end of this example, takes as input the R(2+1)D Video Classifier r2plus1d, a mini-batch of input data dlRGB, and a mini-batch of ground truth label data dlT. The function returns the training loss value, the gradients of the loss with respect to the learnable parameters of the classifier, and the mini-batch accuracy of the classifier.
-The loss is calculated by computing the cross-entropy loss of the predictions from video classifier. The output predictions of the network are probabilities between 0 and 1 for each of the classes.
-        
-        
-The accuracy of the classifier is calculated by comparing the classifier predictions to the ground truth label of the inputs, dlT.
+% Define Model Loss Function
+% The accuracy of the classifier is calculated by comparing the classifier predictions to the ground truth label of the inputs, dlT.
 
-Specify Training Options
-Train with a mini-batch size of 5 for 900 iterations. Specify the iteration after which to save the model with the best validation accuracy by using the SaveBestAfterIteration parameter.
-Specify the cosine-annealing learning rate schedule [3] parameters:
-A minimum learning rate of 1e-4.
-A maximum learning rate of 1e-3.
-Cosine number of iterations of 200, 300, and 400, after which the learning rate schedule cycle restarts. The option CosineNumIterations defines the width of each cosine cycle.
+% Specify Training Options
+% Train with a mini-batch size of 5 for 900 iterations. Specify the iteration after which to save the model with the best validation accuracy by using the SaveBestAfterIteration parameter.
+% A minimum learning rate of 1e-4.
+% A maximum learning rate of 1e-3.
+% Cosine number of iterations of 200, 300, and 400, after which the learning rate schedule cycle restarts. The option CosineNumIterations defines the width of each cosine cycle.
 Specify the parameters for SGDM optimization. Initialize the SGDM optimization parameters at the beginning of the training:
-A momentum of 0.9.
-An initial velocity parameter initialized as [].
-An L2 regularization factor of 0.0005.
-Specify to dispatch the data in the background using a parallel pool. If DispatchInBackground is set to true, open a parallel pool with the specified number of parallel workers, and create a DispatchInBackgroundDatastore, provided as part of this example, that dispatches the data in the background to speed up training using asynchronous data loading and preprocessing. By default, this example uses a GPU if one is available. Otherwise, it uses a CPU. Using a GPU requires Parallel Computing Toolbox™ and a CUDA® enabled NVIDIA® GPU. For information about the supported compute capabilities, see GPU Support by Release.
+% A momentum of 0.9.
+% An initial velocity parameter initialized as [].
+% An L2 regularization factor of 0.0005.
 params.Classes = classes;
 params.MiniBatchSize = 3;
 params.NumIterations = 1000;
@@ -90,17 +69,9 @@ params.ValidationData = dsVal;
 params.DispatchInBackground = false;
 params.NumWorkers = 12;
 
-Train R(2+1)D Video Classifier
+% Train R(2+1)D Video Classifier
 Train the R(2+1)D video classifier using the video data.
-For each epoch:
-Shuffle the data before looping over mini-batches of data.
-Use minibatchqueue to loop over the mini-batches. The supporting function createMiniBatchQueue, listed at the end of this example, uses the given training datastore to create a minibatchqueue. 
-Display the loss and accuracy results for each epoch using the supporting function displayVerboseOutputEveryEpoch, listed at the end of this example.
-For each mini-batch:
-Convert the video data and the labels to dlarray objects with the underlying type single.
-To enable processing the time dimension of the the video data using the R(2+1)D Video Classifier specify the temporal sequence dimension, "T". Specify the dimension labels "SSCTB" (spatial, spatial, channel, temporal, batch) for the video data, and "CB" for the label data.
-The minibatchqueue object uses the supporting function batchVideo, listed at the end of this example, to batch the RGB video data.
-params.ModelFilename = "G:\FYP\r2plus1d-OWNdata.mat";
+params.ModelFilename = "Model\r2plus1d-OWNdata.mat";
 if doTraining
     epoch = 1;
     bestLoss = realmax;
@@ -186,17 +157,15 @@ if doTraining
     disp("Model saved to: " + params.ModelFilename);
 end
 
-Evaluate Trained Video Classifier
-Use the test data set to evaluate the accuracy of the trained video classifier. 
-Load the best model saved during training or use the pretrained model.
+% Evaluate Trained Video Classifier
 if doTraining
     transferLearned = load(params.ModelFilename);
     r2plus1dPretrained = transferLearned.data.r2plus1d;
 end
-Create a minibatchqueue object to load batches of the test data.
+
 numOutputs = 2;
 mbq = createMiniBatchQueue(dsVal, numOutputs, params);
-For each batch of evaluation data, make predictions using the R(2+1)D Video Classifier, and compute the prediction accuracy using a confusion matrix.
+
 numClasses = numel(params.Classes);
 cmat = sparse(numClasses,numClasses);
 
@@ -214,16 +183,14 @@ while hasdata(mbq)
     [~,YPred] = max(dlYPred,[],1);
     cmat = aggregateConfusionMetric(cmat,TTest,YPred);
 end
-Compute the average clip classification accuracy for the trained R(2+1)D Video Classifier.
+% Compute the average clip classification accuracy for the trained R(2+1)D Video Classifier.
 evalClipAccuracy = sum(diag(cmat))./sum(cmat,"all")
-Display the confusion matrix.
+% Display the confusion matrix.
 figure
 chart = confusionchart(cmat,classes);
-The R(2+1)D video classifier that is pretrained on the Kinetics-400 dataset, provides strong performance for human activity recognition on transfer learning. The above training was run on 24GB Titan-X GPU for about 30 minutes. When training from scratch on a small activity recognition video dataset, the training time and convergence takes much longer than the pretrained video classifier. Transer learning using the Kinetics-400 pretrained R(2+1)D video classifier also avoids overfitting the classifier when ran for larger number of epochs. To learn more about video recognition using deep learning, see Getting Started with Video Classification Using Deep Learning.
 
-Supporting Functions
-createFileDatastore
-The createFileDatastore function creates a FileDatastore object using the given folder name. The FileDatastore object reads the data in 'partialfile' mode, so every read can return partially read frames from videos. This feature helps with reading large video files, if all of the frames do not fit in memory.
+% Supporting Functions
+% createFileDatastore
 function datastore = createFileDatastore(trainingFolder,numFrames,numChannels,classes,isDataForTraining)
     readFcn = @(f,u)readVideo(f,u,numFrames,numChannels,classes,isDataForTraining);
     datastore = fileDatastore(trainingFolder,...
@@ -232,8 +199,8 @@ function datastore = createFileDatastore(trainingFolder,numFrames,numChannels,cl
         'ReadFcn',readFcn,...
         'ReadMode','partialfile');
 end
-shuffleTrainDs
-The shuffleTrainDs function shuffles the files present in the training datastore, dsTrain.
+% shuffleTrainDs
+% The shuffleTrainDs function shuffles the files present in the training datastore, dsTrain.
 
 function shuffled = shuffleTrainDs(dsTrain)
 shuffled = copy(dsTrain);
@@ -254,8 +221,7 @@ end
 reset(shuffled);
 
 end
-readVideo
-The readVideo function reads video frames, and the corresponding label values for a given video file. During training, the read function reads the specific number of frames as per the network input size, with a randomly chosen starting frame. During testing, all the frames are sequentially read. The video frames are resized to the required classifier network input size for training, and for testing and validation.
+% readVideo
 function [data,userdata,done] = readVideo(filename,userdata,numFrames,numChannels,classes,isDataForTraining)
     if isempty(userdata)
         userdata.reader      = VideoReader(filename);
@@ -294,7 +260,7 @@ function [data,userdata,done] = readVideo(filename,userdata,numFrames,numChannel
     % if it is training.
     done = batchesRead == numBatches || isDataForTraining;
 end
-readForTraining
+% readForTraining
 The readForTraining function reads the video frames for training the video classifier. The function reads the specific number of frames as per the network input size, with a randomly chosen starting frame. If there are not enough frames left over, the video sequence is repeated to pad the required number of frames.
 function video = readForTraining(reader, numFrames, totalFrames)
     if numFrames >= totalFrames
@@ -313,8 +279,7 @@ function video = readForTraining(reader, numFrames, totalFrames)
         video = video(:,:,:,1:numFrames);
     end
 end
-readForValidation
-The readForValidation function reads the video frames for evaluating the trained video classifier. The function reads the specific number of frames sequentially as per the network input size. If there are not enough frames left over, the video sequence is repeated to pad the required number of frames.
+% readForValidation
 function video = readForValidation(reader, datatype, numChannels, numFrames, totalFrames)
     H = reader.Height;
     W = reader.Width;
@@ -334,14 +299,13 @@ function video = readForValidation(reader, datatype, numChannels, numFrames, tot
         video = video(:,:,:,1:numFrames);       
     end
 end
-getLabel
-The getLabel function obtains the label name from the full path of a filename. The label for a file is the folder in which it exists. For example, for a file path such as "/path/to/dataset/clapping/video_0001.avi", the label name is "clapping".
+% getLabel
 function label = getLabel(filename,classes)
     folder = fileparts(string(filename));
     [~,label] = fileparts(folder);
     label = categorical(string(label), string(classes));
 end
-augmentVideo
+% augmentVideo
 The augmentVideo function augments the video frames for training the video classifier. The function augments a video sequence with the same augmentation technique provided by the augmentTransform function.
 function data = augmentVideo(data)
     numClips = size(data,1);
@@ -354,7 +318,7 @@ function data = augmentVideo(data)
         data{ii,1} = augmentFcn(video);
     end
 end
-augmentTransform
+% augmentTransform
 The augmentTransform function creates an augmentation method with random left-right flipping and scaling factors.
 function augmentFcn = augmentTransform(sz)
 % Randomly flip and scale the image.
@@ -367,8 +331,7 @@ augmentFcn = @(data)augmentData(data,tform,rout);
         data = imwarp(data,tform,'OutputView',rout);
     end
 end
-preprocessVideoClips
-The preprocessVideoClips function preprocesses the training video data to resize to the R(2+1)D Video Classifier input size. It takes the InputNormalizationStatistics and the InputSize properties of the video classifier in a struct, info. The InputNormalizationStatistics property is used to rescale the video frames between 0 and 1, and then normalize the rescaled data using mean and standard deviation. The input size is used to resize the video frames using imresize based on the SizingOption value in the info struct. Alternatively, you could use "randomcrop" or "centercrop" as values for SizingOption to random crop or center crop the input data to the input size of the video classifier.
+% preprocessVideoClips
 function data = preprocessVideoClips(data, info)
     inputSize = info.InputSize(1:2);
     sizingOption = info.SizingOption;
@@ -419,8 +382,7 @@ function data = preprocessVideoClips(data, info)
         end
     end
 end
-createMiniBatchQueue
-The createMiniBatchQueue function creates a minibatchqueue object that provides miniBatchSize amount of data from the given datastore. It also creates a DispatchInBackgroundDatastore if a parallel pool is open.
+% createMiniBatchQueue
 
 function mbq = createMiniBatchQueue(datastore, numOutputs, params)
 if params.DispatchInBackground && isempty(gcp('nocreate'))
@@ -442,8 +404,8 @@ mbq = minibatchqueue(datastore, numOutputs, ...
     "MiniBatchFcn", @batchVideo, ...
     "MiniBatchFormat", [inputFormat,outputFormat]);
 end
-batchVideo
-The batchVideo function batches the video, and the label data from cell arrays. It uses onehotencode function to encode ground truth categorical labels into one-hot arrays. The one-hot encoded array contains a 1 in the position corresponding to the class of the label, and 0 in every other position.
+% batchVideo
+% The batchVideo function batches the video, and the label data from cell arrays. It uses onehotencode function to encode ground truth categorical labels into one-hot arrays. The one-hot encoded array contains a 1 in the position corresponding to the class of the label, and 0 in every other position.
 function [video,labels] = batchVideo(video, labels)
 % Batch dimension: 5
 video = cat(5,video{:});
@@ -454,8 +416,8 @@ labels = cat(2,labels{:});
 % Feature dimension: 1
 labels = onehotencode(labels,1);
 end
-modelLoss
-The modelLoss function takes as input a mini-batch of RGB data dlRGB, and the corresponding target dlT, and returns the corresponding loss, the gradients of the loss with respect to the learnable parameters, and the training accuracy. To compute the gradients, evaluate the modelLoss function using the dlfeval function in the training loop.
+% modelLoss
+% The modelLoss function takes as input a mini-batch of RGB data dlRGB, and the corresponding target dlT, and returns the corresponding loss, the gradients of the loss with respect to the learnable parameters, and the training accuracy. To compute the gradients, evaluate the modelLoss function using the dlfeval function in the training loop.
 function [loss,gradientsRGB,acc,stateRGB] = modelLoss(r2plus1d,dlRGB,dlT)
 [dlYPredRGB,stateRGB] = forward(r2plus1d,dlRGB);
 dlYPred = squeezeIfNeeded(dlYPredRGB, dlT);
@@ -477,8 +439,8 @@ if ~isequal(size(T), size(dlYPred))
     dlYPred = dlarray(dlYPred,dims(T));
 end
 end
-updateLearnables
-The updateLearnables function updates the provided dlnetwork object with gradients and other parameters using SGDM optimization function sgdmupdate.
+% updateLearnables
+% The updateLearnables function updates the provided dlnetwork object with gradients and other parameters using SGDM optimization function sgdmupdate.
 function [r2plus1d,velocity,learnRate] = updateLearnables(r2plus1d,gradients,params,velocity,iteration)
     % Determine the learning rate using the cosine-annealing learning rate schedule.
     learnRate = cosineAnnealingLearnRate(iteration, params);
@@ -492,8 +454,8 @@ function [r2plus1d,velocity,learnRate] = updateLearnables(r2plus1d,gradients,par
     [r2plus1d, velocity] = sgdmupdate(r2plus1d, gradients, velocity, learnRate, params.Momentum);
 end
 
-cosineAnnealingLearnRate
-The cosineAnnealingLearnRate function computes the learning rate based on the current iteration number, minimum learning rate, maximum learning rate, and number of iterations for annealing [3].
+% cosineAnnealingLearnRate
+% The cosineAnnealingLearnRate function computes the learning rate based on the current iteration number, minimum learning rate, maximum learning rate, and number of iterations for annealing [3].
 function lr = cosineAnnealingLearnRate(iteration, params)
     if iteration == params.NumIterations
         lr = params.MinLearningRate;
@@ -510,16 +472,16 @@ function lr = cosineAnnealingLearnRate(iteration, params)
     cosMult = 1 + cos(pi * annealingIteration / cosineIteration);
     lr = minR + ((maxR - minR) *  cosMult / 2);
 end
-aggregateConfusionMetric
-The aggregateConfusionMetric function incrementally fills a confusion matrix based on the predicted results YPred and the expected results TTest.
+% aggregateConfusionMetric
+% The aggregateConfusionMetric function incrementally fills a confusion matrix based on the predicted results YPred and the expected results TTest.
 function cmat = aggregateConfusionMetric(cmat,TTest,YPred)
 TTest = gather(extractdata(TTest));
 YPred = gather(extractdata(YPred));
 [m,n] = size(cmat);
 cmat = cmat + full(sparse(TTest,YPred,1,m,n));
 end
-doValidation
-The doValidation function validates the video classifier using the validation data.
+% doValidation
+% The doValidation function validates the video classifier using the validation data.
 function [validationTime, cmat, lossValidation, accValidation] = doValidation(params, r2plus1d)
 
     validationTime = tic;
@@ -553,8 +515,8 @@ function [validationTime, cmat, lossValidation, accValidation] = doValidation(pa
 
     validationTime = toc(validationTime);
 end
-saveData
-The saveData function saves the given R(2+1)D Video Classifier, accuracy, loss, and other training parameters to a MAT-file.
+% saveData
+% The saveData function saves the given R(2+1)D Video Classifier, accuracy, loss, and other training parameters to a MAT-file.
 function bestLoss = saveData(r2plus1d,bestLoss,iteration,cmat,lossTrain,lossValidation,accTrain,accValidation,params)
 if iteration >= params.SaveBestAfterIteration
     lossValidtion = extractdata(gather(lossValidation));
@@ -573,8 +535,8 @@ if iteration >= params.SaveBestAfterIteration
     end
 end
 end
-gatherFromGPUToSave
-The gatherFromGPUToSave function gathers data from the GPU in order to save the video classifier to disk.
+% gatherFromGPUToSave
+% The gatherFromGPUToSave function gathers data from the GPU in order to save the video classifier to disk.
 function r2plus1d = gatherFromGPUToSave(r2plus1d)
 if ~canUseGPU
     return;
@@ -587,8 +549,8 @@ r2plus1d.State = gatherValues(r2plus1d.State);
         end
     end
 end
-checkForHMDB51Folder
-The checkForHMDB51Folder function checks for the downloaded data in the download folder.
+% checkForHMDB51Folder
+% The checkForHMDB51Folder function checks for the downloaded data in the download folder.
 function classes = checkForHMDB51Folder(dataLoc)
 hmdbFolder = fullfile(dataLoc, "hmdb51_org");
 if ~isfolder(hmdbFolder)
@@ -607,8 +569,8 @@ if ~all(arrayfun(@(x)exist(x,'dir'),expectFolders))
     error("Download hmdb51_org.rar using the supporting function 'downloadHMDB51' before running the example and extract the RAR file.");
 end
 end
-initializeTrainingProgressPlot
-The initializeTrainingProgressPlot function configures two plots for displaying the training loss, training accuracy, and validation accuracy.
+% initializeTrainingProgressPlot
+% The initializeTrainingProgressPlot function configures two plots for displaying the training loss, training accuracy, and validation accuracy.
 function plotters = initializeTrainingProgressPlot(params)
 if params.ProgressPlot
     % Plot the loss, training accuracy, and validation accuracy.
@@ -631,8 +593,8 @@ else
     plotters = [];
 end
 end
-updateProgressPlot
-The updateProgressPlot function updates the progress plot with loss and accuracy information during training.
+% updateProgressPlot
+% The updateProgressPlot function updates the progress plot with loss and accuracy information during training.
 function updateProgressPlot(params,plotters,epoch,iteration,start,lossTrain,accuracyTrain,accuracyValidation)
 if params.ProgressPlot
     
@@ -645,7 +607,7 @@ if params.ProgressPlot
     drawnow
 end
 end
-initializeVerboseOutput
+% initializeVerboseOutput
 function initializeVerboseOutput(params)
 if params.Verbose
     disp(" ")
@@ -667,7 +629,7 @@ if params.Verbose
     disp("|=======================================================================================================================================|")
 end
 end
-displayVerboseOutputEveryEpoch
+% displayVerboseOutputEveryEpoch
 function displayVerboseOutputEveryEpoch(params,start,learnRate,epoch,iteration,...
         accTrain,accValidation,lossTrain,lossValidation,trainTime,validationTime)
     if params.Verbose
@@ -703,8 +665,8 @@ function displayVerboseOutputEveryEpoch(params,start,learnRate,epoch,iteration,.
         acc = pad(string(acc),6,'left');
     end
 end
-endVerboseOutput
-The endVerboseOutput function displays the end of verbose output during training.
+% endVerboseOutput
+% The endVerboseOutput function displays the end of verbose output during training.
 function endVerboseOutput(params)
 if params.Verbose
     disp("|=======================================================================================================================================|")
