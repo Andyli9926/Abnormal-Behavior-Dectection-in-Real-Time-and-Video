@@ -45,7 +45,7 @@ dsVal = transform(dsVal, @(data)preprocessVideoClips(data, preprocessInfo));
 % The accuracy of the classifier is calculated by comparing the classifier predictions to the ground truth label of the inputs, dlT.
 
 % Specify Training Options
-% Train with a mini-batch size of 5 for 900 iterations. Specify the iteration after which to save the model with the best validation accuracy by using the SaveBestAfterIteration parameter.
+% Train with a mini-batch size of 5 for 1000 iterations. Specify the iteration after which to save the model with the best validation accuracy by using the SaveBestAfterIteration parameter.
 % A minimum learning rate of 1e-4.
 % A maximum learning rate of 1e-3.
 % Cosine number of iterations of 200, 300, and 400, after which the learning rate schedule cycle restarts. The option CosineNumIterations defines the width of each cosine cycle.
