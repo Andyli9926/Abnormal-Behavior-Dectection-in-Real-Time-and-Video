@@ -1,0 +1,231 @@
+classdef app1 < matlab.apps.AppBase
+
+    % Properties that correspond to app components
+    properties (Access = public)
+        UIFigure            matlab.ui.Figure
+        ListBox             matlab.ui.control.ListBox
+        ListBoxLabel        matlab.ui.control.Label
+        AlarmLamp           matlab.ui.control.Lamp
+        AlarmLampLabel      matlab.ui.control.Label
+        OpenDocumentButton  matlab.ui.control.Button
+        StopButton          matlab.ui.control.Button
+        CameraLabel         matlab.ui.control.Label
+        StartButton         matlab.ui.control.Button
+        UIAxes_2            matlab.ui.control.UIAxes
+    end
+
+    
+    properties (Access = private)
+        label
+        cam
+        scores  
+        stopier % Description
+        
+    end
+    
+    methods (Access = private)
+        
+    end
+    
+
+    % Callbacks that handle component events
+    methods (Access = private)
+
+        % Button pushed function: StartButton
+        function StartButtonPushed(app, event)
+        
+            app.cam = webcam;
+            
+            trainedmodel = load("G:\FYP\r2plus1d-V2.mat");
+            R2D = trainedmodel.data.r2plus1d;
+            classifyInterval = 10;
+            sequenceLength = R2D.InputSize(4);
+            numFrames = 0;
+            text = "";
+            Alable = {'stand'};
+            app.label = "";
+            TEXT = {};
+            n = 1;
+
+            app.stopier = 0;
+
+    while 1
+
+        pause(1e-4);
+
+        if app.stopier
+
+            break
+
+        end
+
+      frame = snapshot(app.cam);
+
+      numFrames = numFrames + 1;
+      R2D = updateSequence(R2D,frame);
+
+    if mod(numFrames, classifyInterval) == 0 && numFrames >= sequenceLength
+        
+        [app.label,app.scores] = classifySequence(R2D);
+        app.AlarmLamp.Color = [0.00,1.00,0.00]; 
+        
+        if ~isempty(app.label)
+            text = string(app.label) + "; " + num2str(max(app.scores), "%0.2f");
+        end
+
+    end
+
+    frame = insertText(frame,[30,30],text,'FontSize',18);
+    tf = strcmp(string(app.label), Alable);
+
+    if sum(tf(:)) ~= 0     
+            filename = sprintf('G:\\FYP\\Store\\%s_%s.jpg', string(datetime,'yyyy-MM-dd-HH-mm-ss'),string(app.label));
+            Text = sprintf('%s_%s',string(datetime,'yyyy-MM-dd-HH-mm-ss'),string(app.label));
+            TEXT{n} = Text;
+            imwrite(frame,filename);% 保存
+            app.AlarmLamp.Color = [1.00,0.00,0.00];
+            n = n+1;
+    end
+    app.ListBox.Items = TEXT;
+     
+     imshow(frame,'Parent',app.UIAxes_2);
+
+    end
+
+
+            
+        end
+
+        % Button pushed function: StopButton
+        function StopButtonPushed(app, event)
+           app.stopier = 1;
+        end
+
+        % Button pushed function: OpenDocumentButton
+        function OpenDocumentButtonPushed(app, event)
+            winopen('G:\FYP\store');
+        end
+
+        % Close request function: UIFigure
+        function UIFigureCloseRequest(app, event)
+           
+        YN = uiconfirm(app.UIFigure,'Do you want to close the app?', 'Close request');
+                
+                if strcmpi(YN,'OK')
+
+                       delete(app)
+
+                end
+            
+        end
+    end
+
+    % Component initialization
+    methods (Access = private)
+
+        % Create UIFigure and components
+        function createComponents(app)
+
+            % Create UIFigure and hide until all components are created
+            app.UIFigure = uifigure('Visible', 'off');
+            app.UIFigure.Position = [100 100 760 543];
+            app.UIFigure.Name = 'MATLAB App';
+            app.UIFigure.CloseRequestFcn = createCallbackFcn(app, @UIFigureCloseRequest, true);
+
+            % Create UIAxes_2
+            app.UIAxes_2 = uiaxes(app.UIFigure);
+            app.UIAxes_2.XTick = [];
+            app.UIAxes_2.YTick = [];
+            app.UIAxes_2.Box = 'on';
+            app.UIAxes_2.Position = [2 94 543 373];
+
+            % Create StartButton
+            app.StartButton = uibutton(app.UIFigure, 'push');
+            app.StartButton.ButtonPushedFcn = createCallbackFcn(app, @StartButtonPushed, true);
+            app.StartButton.Tag = 'Start';
+            app.StartButton.BackgroundColor = [0.3922 0.8314 0.0745];
+            app.StartButton.FontSize = 14;
+            app.StartButton.FontColor = [1 1 1];
+            app.StartButton.Position = [24 39 100 41];
+            app.StartButton.Text = 'Start';
+
+            % Create CameraLabel
+            app.CameraLabel = uilabel(app.UIFigure);
+            app.CameraLabel.HorizontalAlignment = 'center';
+            app.CameraLabel.FontSize = 18;
+            app.CameraLabel.FontWeight = 'bold';
+            app.CameraLabel.Position = [120 467 304 48];
+            app.CameraLabel.Text = 'Camera';
+
+            % Create StopButton
+            app.StopButton = uibutton(app.UIFigure, 'push');
+            app.StopButton.ButtonPushedFcn = createCallbackFcn(app, @StopButtonPushed, true);
+            app.StopButton.BackgroundColor = [1 0 0];
+            app.StopButton.FontSize = 14;
+            app.StopButton.FontColor = [1 1 1];
+            app.StopButton.Position = [200 38 100 42];
+            app.StopButton.Text = 'Stop';
+
+            % Create OpenDocumentButton
+            app.OpenDocumentButton = uibutton(app.UIFigure, 'push');
+            app.OpenDocumentButton.ButtonPushedFcn = createCallbackFcn(app, @OpenDocumentButtonPushed, true);
+            app.OpenDocumentButton.BackgroundColor = [0.302 0.7451 0.9333];
+            app.OpenDocumentButton.FontSize = 14;
+            app.OpenDocumentButton.FontColor = [1 1 1];
+            app.OpenDocumentButton.Position = [389 38 113 42];
+            app.OpenDocumentButton.Text = 'OpenDocument';
+
+            % Create AlarmLampLabel
+            app.AlarmLampLabel = uilabel(app.UIFigure);
+            app.AlarmLampLabel.HorizontalAlignment = 'right';
+            app.AlarmLampLabel.FontSize = 14;
+            app.AlarmLampLabel.FontWeight = 'bold';
+            app.AlarmLampLabel.Position = [36 489 45 22];
+            app.AlarmLampLabel.Text = 'Alarm';
+
+            % Create AlarmLamp
+            app.AlarmLamp = uilamp(app.UIFigure);
+            app.AlarmLamp.Position = [93 487 29 29];
+
+            % Create ListBoxLabel
+            app.ListBoxLabel = uilabel(app.UIFigure);
+            app.ListBoxLabel.HorizontalAlignment = 'right';
+            app.ListBoxLabel.Position = [637 466 48 22];
+            app.ListBoxLabel.Text = 'List Box';
+
+            % Create ListBox
+            app.ListBox = uilistbox(app.UIFigure);
+            app.ListBox.Items = {};
+            app.ListBox.Position = [560 118 201 330];
+            app.ListBox.Value = {};
+
+            % Show the figure after all components are created
+            app.UIFigure.Visible = 'on';
+        end
+    end
+
+    % App creation and deletion
+    methods (Access = public)
+
+        % Construct app
+        function app = app1
+
+            % Create UIFigure and components
+            createComponents(app)
+
+            % Register the app with App Designer
+            registerApp(app, app.UIFigure)
+
+            if nargout == 0
+                clear app
+            end
+        end
+
+        % Code that executes before app deletion
+        function delete(app)
+
+            % Delete UIFigure when app is deleted
+            delete(app.UIFigure)
+        end
+    end
+end
