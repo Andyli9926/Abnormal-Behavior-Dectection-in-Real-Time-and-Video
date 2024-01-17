@@ -6,71 +6,66 @@ for offline and real-time monitoring and analysis.
 ## Description
 
 In recent years, there has been a surge in the use of surveillance cameras in public places 
-such as parks, airports and shopping malls in order to enhance public safety and social security. 
+such as parks, airports, and shopping malls to enhance public safety and social security. 
 Despite this, many public places still rely on traditional surveillance techniques such as offline 
 video analysis or manual monitoring to identify unusual behaviour. Given the exponential 
 growth in surveillance video data, these traditional methods have become increasingly complex 
-and challenging, preventing security personnel from detecting unusual events in a timely 
-manner. In addition, abnormal events typically occur far less frequently than typical activities, 
+and challenging, preventing security personnel from detecting unusual events promptly. In addition, abnormal events typically occur far less frequently than typical activities, 
 resulting in a significant waste of manpower and time. There is therefore an urgent need to 
-develop an intelligent surveillance system that can analyses human behavior in real time, 
+develop an intelligent surveillance system that can analyze human behavior in real time, 
 automatically alert and preserve evidence related to abnormal behavior. In addition, motion 
 detection can accurately locate the position of moving individuals in video, simplifying the 
 process for users to identify areas of interest when reviewing recorded alarm scenes or 
 observing live footage. This ultimately improves the efficiency and accuracy of abnormal 
 activity detection
 
+## Results 
+### Classification 
+![image](https://github.com/Andyli9926/Abnormal-Behavior-Dectection-in-Real-Time-and-Video/assets/145501579/375a75d8-dd21-498a-ad98-69de995bf847)
+### StramingAPP
+![image](https://github.com/Andyli9926/Abnormal-Behavior-Dectection-in-Real-Time-and-Video/assets/145501579/d715de2f-fd70-4901-b119-205ea84bb605)
+### VideoAPP
+![image](https://github.com/Andyli9926/Abnormal-Behavior-Dectection-in-Real-Time-and-Video/assets/145501579/52964d4e-9e8c-44be-a1ed-b3c96e2603b8)
 ## Getting Started
 
-### Dependencies
+### Required Toolboxes
 
-* Describe any prerequisites, libraries, OS version, etc., needed before installing program.
-* ex. Windows 10
+* Deep Learning Toolbox
+* Computer Vision Toolbox
+* Deep Learning Toolbox Model for GoogLeNet Network
+* Matlab R2023b
 
 ### Installing
 
-* How/where to download your program
-* Any modifications needed to be made to files/folders
+* Download the training codes in the train folder.
+* If you want to use or modify the Apps, download the codes in the App folder or download the apps with the link https://drive.google.com/drive/folders/1nNl5e_9ZczLWtN3lFWkMv_V1-AiKhOX6?usp=sharing
+* The model trained by myself can be downloaded in the link
+https://drive.google.com/file/d/1_Y2Hnr-N38skxBRdqvdvuAhCjP7RChgs/view?usp=sharing
 
 ### Executing program
+#### For training
+* To run the train code, open the code in the live editor in MATLAB
+* Change the file address to your dataset and change the names of each behavior type following the order of each folder.
+* Change the address to store the trained model
+#### For Apps
+* To run Apps, change the model address to your model or my model.
+* For the WebcamAPP, change the image store address to your address.
+#### Others
+* Run Classify codes in live editor
+* Run Motiontracking code in editor
 
-* How to run the program
-* Step-by-step bullets
-```
-code blocks for commands
-```
-
-## Help
-
-Any advise for common problems or issues.
-```
-command to run if program contains helper info
-```
 
 ## Authors
 
-Contributors names and contact info
+Zekai Li
 
-ex. Dominique Pizzie  
-ex. [@DomPizzie](https://twitter.com/dompizzie)
+Email:zl874@cornell.edu
 
-## Version History
 
-* 0.2
-    * Various bug fixes and optimizations
-    * See [commit change]() or See [release history]()
-* 0.1
-    * Initial Release
-
-## License
-
-This project is licensed under the [NAME HERE] License - see the LICENSE.md file for details
-
-## Acknowledgments
-
-Inspiration, code snippets, etc.
-* [awesome-readme](https://github.com/matiassingers/awesome-readme)
-* [PurpleBooth](https://gist.github.com/PurpleBooth/109311bb0361f32d87a2)
-* [dbader](https://github.com/dbader/readme-template)
-* [zenorocha](https://gist.github.com/zenorocha/4526327)
-* [fvcproductions](https://gist.github.com/fvcproductions/1bfc2d4aecb01a834b46)
+## Reference
+* Carreira, Joao, and Andrew Zisserman. "Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset." Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR): 6299??6308. Honolulu, HI: IEEE, 2017.
+* Simonyan, Karen, and Andrew Zisserman. "Two-Stream Convolutional Networks for Action Recognition in Videos." Advances in Neural Information Processing Systems 27, Long Beach, CA: NIPS, 2017.
+* Loshchilov, Ilya, and Frank Hutter. "SGDR: Stochastic Gradient Descent with Warm Restarts." International Conferencee on Learning Representations 2017. Toulon, France: ICLR, 2017.
+* Du Tran, Heng Wang, Lorenzo Torresani, Jamie Ray, Yann LeCun, Manohar Paluri. "A Closer Look at Spatiotemporal Convolutions for Action Recognition". Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2018, pp. 6450-6459.
+* Christoph Feichtenhofer, Haoqi Fan, Jitendra Malik, and Kaiming He. "SlowFast Networks for Video Recognition." Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2019.
+* Will Kay, Joao Carreira, Karen Simonyan, Brian Zhang, Chloe Hillier, Sudheendra Vijayanarasimhan, Fabio Viola, Tim Green, Trevor Back, Paul Natsev, Mustafa Suleyman, Andrew Zisserman. "The Kinetics Human Action Video Dataset." arXiv preprint arXiv:1705.06950, 2017.
