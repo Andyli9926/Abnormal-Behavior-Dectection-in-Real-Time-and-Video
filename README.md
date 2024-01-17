@@ -1,10 +1,24 @@
-# Project Title
-
-Simple overview of use/purpose.
+# Real-time abnormal human's motion behavior detection 
+In the project, a deep learning method and a GMM-based motion detection algorithm are developed for detecting abnormal behavior.
+The trained models are evaluated using accuracy and confusion chart, and two user-friendly GUIs are implemented 
+for offline and real-time monitoring and analysis.
 
 ## Description
 
-An in-depth paragraph about your project and overview of use.
+In recent years, there has been a surge in the use of surveillance cameras in public places 
+such as parks, airports and shopping malls in order to enhance public safety and social security. 
+Despite this, many public places still rely on traditional surveillance techniques such as offline 
+video analysis or manual monitoring to identify unusual behaviour. Given the exponential 
+growth in surveillance video data, these traditional methods have become increasingly complex 
+and challenging, preventing security personnel from detecting unusual events in a timely 
+manner. In addition, abnormal events typically occur far less frequently than typical activities, 
+resulting in a significant waste of manpower and time. There is therefore an urgent need to 
+develop an intelligent surveillance system that can analyses human behavior in real time, 
+automatically alert and preserve evidence related to abnormal behavior. In addition, motion 
+detection can accurately locate the position of moving individuals in video, simplifying the 
+process for users to identify areas of interest when reviewing recorded alarm scenes or 
+observing live footage. This ultimately improves the efficiency and accuracy of abnormal 
+activity detection
 
 ## Getting Started
 
