@@ -4,7 +4,7 @@ doTraining = true;
 % This example trains an Inflated-3D (I3D) Video Classifier using the HMDB51 data set. Use the downloadHMDB51 supporting function, listed at the end of this example, to download the HMDB51 data set to a folder named hmdb51.
 classes = ["fall_floor","fight","hit","kick","normal","run","stand","walk"];
 dataFolder = fullfile("G:\FYP\CNNdata");
-The data set contains about 2 GB of video data for 7000 clips over 51 classes, such as drink, run, and shake hands. Each video frame has a height of 240 pixels and a minimum width of 176 pixels. The number of frames ranges from 18 to approximately 1000.
+% The data set contains about 2 GB of video data for 7000 clips over 51 classes, such as drink, run, and shake hands. Each video frame has a height of 240 pixels and a minimum width of 176 pixels. The number of frames ranges from 18 to approximately 1000.
 [labels,files] = folders2labels(fullfile(dataFolder,string(classes)),...
     "IncludeSubfolders",true,...
     "FileExtensions",'.avi');
