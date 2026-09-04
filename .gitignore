@@ -1,0 +1,6 @@
+# Octave/demo outputs
+out/
+*.png.tmp
+
+# Editor/OS cruft
+.DS_Store

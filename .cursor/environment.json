@@ -1,0 +1,5 @@
+{
+  "name": "Abnormal Behavior Detection (MATLAB/Octave)",
+  "user": "ubuntu",
+  "install": "sudo bash .cursor/install.sh"
+}
